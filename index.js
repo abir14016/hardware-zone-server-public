@@ -2,7 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -19,6 +19,8 @@ async function run() {
     try {
         await client.connect();
         const toolCollection = client.db("hardwareZone").collection("tool");
+        const myOrderCollection = client.db("hardwareZone").collection("myOrder");
+
 
         // load all tools from database
         app.get('/tool', async (req, res) => {
@@ -26,6 +28,21 @@ async function run() {
             const cursor = toolCollection.find(query);
             const tools = await cursor.toArray();
             res.send(tools);
+        });
+
+
+        //load specific tool from database
+        app.get('/tool/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const tool = await toolCollection.findOne(query);
+            res.send(tool);
+        });
+
+        app.post('/myorder', async (req, res) => {
+            const myOrder = req.body;
+            const result = await myOrderCollection.insertOne(myOrder);
+            res.send(result);
         });
     }
     finally {
