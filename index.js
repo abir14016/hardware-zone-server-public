@@ -39,11 +39,22 @@ async function run() {
             res.send(tool);
         });
 
+
+        //send user's order to database
         app.post('/myorder', async (req, res) => {
             const myOrder = req.body;
             const result = await myOrderCollection.insertOne(myOrder);
             res.send(result);
         });
+
+
+        //get user's order from database
+        app.get('/myorder', async (req, res) => {
+            const query = {};
+            const cursor = myOrderCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
     }
     finally {
         //comment
