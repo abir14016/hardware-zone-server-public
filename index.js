@@ -101,11 +101,27 @@ async function run() {
 
 
         //save myprofile info to database
-        app.post('/userprofile', async (req, res) => {
+        // app.post('/userprofile', async (req, res) => {
+        //     const userProfile = req.body;
+        //     const result = await userProfileCollection.insertOne(userProfile);
+        //     res.send(result);
+        // });
+
+
+        //update or insert user's profile to database
+        app.put('/userprofile/:email', async (req, res) => {
+            const email = req.params.email;
             const userProfile = req.body;
-            const result = await userProfileCollection.insertOne(userProfile);
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: userProfile,
+            };
+            const result = await userProfileCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
         })
+
+
 
     }
     finally {
