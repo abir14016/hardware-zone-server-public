@@ -21,7 +21,8 @@ async function run() {
         const toolCollection = client.db("hardwareZone").collection("tool");
         const myOrderCollection = client.db("hardwareZone").collection("myOrder");
         const myReviewCollection = client.db("hardwareZone").collection("myReview");
-        const userProfileCollection = client.db("hardwareZone").collection("userProfile")
+        const userProfileCollection = client.db("hardwareZone").collection("userProfile");
+        const userCollection = client.db("hardwareZone").collection("user");
 
 
         // load all tools from database
@@ -118,6 +119,20 @@ async function run() {
                 $set: userProfile,
             };
             const result = await userProfileCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        });
+
+
+        // upsert userCollection
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: user,
+            };
+            const result = await userCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
         })
 
