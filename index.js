@@ -70,11 +70,25 @@ async function run() {
 
 
         //send user's review to database
-        app.post('/myreview', async (req, res) => {
+        // app.post('/myreview', async (req, res) => {
+        //     const myReview = req.body;
+        //     const result = await myReviewCollection.insertOne(myReview);
+        //     res.send(result);
+        // });
+
+
+        //update or insert user's review to database
+        app.put('/myreview/:email', async (req, res) => {
+            const email = req.params.email;
             const myReview = req.body;
-            const result = await myReviewCollection.insertOne(myReview);
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: myReview,
+            };
+            const result = await myReviewCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
-        });
+        })
 
 
         //load user's review from database
