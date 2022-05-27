@@ -21,6 +21,7 @@ async function run() {
         const toolCollection = client.db("hardwareZone").collection("tool");
         const myOrderCollection = client.db("hardwareZone").collection("myOrder");
         const myReviewCollection = client.db("hardwareZone").collection("myReview");
+        const userProfileCollection = client.db("hardwareZone").collection("userProfile")
 
 
         // load all tools from database
@@ -83,6 +84,14 @@ async function run() {
             const reviews = await cursor.toArray();
             res.send(reviews);
         });
+
+
+        //save myprofile info to database
+        app.post('/userprofile', async (req, res) => {
+            const userProfile = req.body;
+            const result = await userProfileCollection.insertOne(userProfile);
+            res.send(result);
+        })
 
     }
     finally {
