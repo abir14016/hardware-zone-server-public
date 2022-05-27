@@ -20,6 +20,7 @@ async function run() {
         await client.connect();
         const toolCollection = client.db("hardwareZone").collection("tool");
         const myOrderCollection = client.db("hardwareZone").collection("myOrder");
+        const myReviewCollection = client.db("hardwareZone").collection("myReview");
 
 
         // load all tools from database
@@ -65,6 +66,15 @@ async function run() {
             const result = await myOrderCollection.deleteOne(query);
             res.send(result);
         });
+
+
+        //send user's review to database
+        app.post('/myreview', async (req, res) => {
+            const myReview = req.body;
+            const result = await myReviewCollection.insertOne(myReview);
+            res.send(result);
+        });
+
     }
     finally {
         //comment
