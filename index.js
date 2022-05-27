@@ -15,6 +15,21 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ecura.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'Unauthorized Access' });
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden Accesss' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
 async function run() {
     try {
         await client.connect();
@@ -52,12 +67,18 @@ async function run() {
 
 
         //get specific user's order from database
-        app.get('/myorder', async (req, res) => {
+        app.get('/myorder', verifyJWT, async (req, res) => {
             const email = req.query.email;
-            const query = { email: email };
-            const cursor = myOrderCollection.find(query);
-            const result = await cursor.toArray();
-            res.send(result);
+            const decodedEmail = req.decoded.email;
+            if (email === decodedEmail) {
+                const query = { email: email };
+                const cursor = myOrderCollection.find(query);
+                const result = await cursor.toArray();
+                return res.send(result);
+            }
+            else {
+                return res.status(403).send({ message: 'Forbidden Accesss' });
+            }
         });
 
 
@@ -133,8 +154,30 @@ async function run() {
                 $set: user,
             };
             const result = await userCollection.updateOne(filter, updatedDoc, options);
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '10d'
+            });
+            res.send({ result, token });
+        });
+
+
+        //load all users
+        app.get('/user', verifyJWT, async (req, res) => {
+            const users = await userCollection.find().toArray();
+            res.send(users);
+        });
+
+
+        //make admin api
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updatedDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updatedDoc);
             res.send(result);
-        })
+        });
 
 
 
