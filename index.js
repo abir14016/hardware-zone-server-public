@@ -75,6 +75,15 @@ async function run() {
             res.send(result);
         });
 
+
+        //load user's review from database
+        app.get('/myreview', async (req, res) => {
+            const query = {};
+            const cursor = myReviewCollection.find(query);
+            const reviews = await cursor.toArray();
+            res.send(reviews);
+        });
+
     }
     finally {
         //comment
