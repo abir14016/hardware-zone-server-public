@@ -79,7 +79,7 @@ async function run() {
 
         //load all orders from mongodb
         app.get('/myorder', async (req, res) => {
-            const orders = await myOrderCollection.find().toArray();
+            const orders = await myOrderCollection.find({}).toArray();
             res.send(orders)
         })
 
@@ -100,9 +100,9 @@ async function run() {
 
 
         //get specific user's order from database
-        app.get('/myorder', verifyJWT, async (req, res) => {
+        app.get('/myorders/myorder/:email', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
-            const email = req.query.email;
+            const email = req.params.email;
             if (email === decodedEmail) {
                 const query = { email: email };
                 const cursor = myOrderCollection.find(query);
