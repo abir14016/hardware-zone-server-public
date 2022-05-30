@@ -4,6 +4,8 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -38,6 +40,7 @@ async function run() {
         const myReviewCollection = client.db("hardwareZone").collection("myReview");
         const userProfileCollection = client.db("hardwareZone").collection("userProfile");
         const userCollection = client.db("hardwareZone").collection("user");
+        // const paymentCollection = client.db("hardwareZone").collection("payment");
 
 
         // load all tools from database
@@ -58,6 +61,15 @@ async function run() {
         });
 
 
+        //load specific order from database
+        app.get('/myorder/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const myOrder = await myOrderCollection.findOne(query);
+            res.send(myOrder);
+        })
+
+
         //send user's order to database
         app.post('/myorder', async (req, res) => {
             const myOrder = req.body;
@@ -65,21 +77,57 @@ async function run() {
             res.send(result);
         });
 
+        //load all orders from mongodb
+        app.get('/myorder', async (req, res) => {
+            const orders = await myOrderCollection.find().toArray();
+            res.send(orders)
+        })
+
+        // app.patch('/myorder/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const payment = req.body;
+        //     const filter = { _id: ObjectId(id) };
+        //     const updatedDoc = {
+        //         $set: {
+        //             paid: true,
+        //             transectionId: payment.transectionId
+        //         }
+        //     };
+        //     const result = await paymentCollection.insertOne(payment);
+        //     const updatedOrder = await myOrderCollection.updateOne(filter, updatedDoc)
+        //     res.send(updatedDoc);
+        // })
+
 
         //get specific user's order from database
         app.get('/myorder', verifyJWT, async (req, res) => {
-            const email = req.query.email;
             const decodedEmail = req.decoded.email;
+            const email = req.query.email;
             if (email === decodedEmail) {
                 const query = { email: email };
                 const cursor = myOrderCollection.find(query);
-                const result = await cursor.toArray();
-                return res.send(result);
+                const myOrders = await cursor.toArray();
+                return res.send(myOrders);
             }
             else {
                 return res.status(403).send({ message: 'Forbidden Accesss' });
             }
         });
+
+
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const service = req.body;
+            const price = service.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ['card']
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        })
 
 
         //delete a single order
@@ -169,7 +217,7 @@ async function run() {
 
 
         //onlyAdmin api
-        app.get('/admin/:email', async (req, res) => {
+        app.get('/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const user = await userCollection.findOne({ email: email });
             const isAdmin = user.role === 'admin';
@@ -178,7 +226,7 @@ async function run() {
 
 
         // onlyUser api
-        app.get('/nonadmin/:email', async (req, res) => {
+        app.get('/nonadmin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const user = await userCollection.findOne({ email: email });
             const nonAdmin = user.role !== 'admin';
@@ -202,6 +250,22 @@ async function run() {
             else {
                 res.status(403).send({ message: 'Forbidden Accesss' });
             }
+        });
+
+
+        // send admin's added tool to database
+        app.post('/addtool', async (req, res) => {
+            const tool = req.body;
+            const result = await toolCollection.insertOne(tool);
+            res.send(result);
+        });
+
+        //delete api for tools
+        app.delete('/tool/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await toolCollection.deleteOne(query);
+            res.send(result);
         });
 
 
