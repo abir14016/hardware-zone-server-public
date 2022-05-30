@@ -1,6 +1,6 @@
 # Hardware Zone
 
-My Website Link: [Hardware Zone](https://github.com/facebook/create-react-app).
+My Website Link: [Hardware Zone](https://resonant-frangollo-feebf1.netlify.app/).
 
 ## Technology I Used
 
